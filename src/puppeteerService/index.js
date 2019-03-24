@@ -12,18 +12,26 @@ module.exports.places = {
   madrid: COORD_ATOCHA
 }
 
+const prodPuppeteerArguments = {
+  args: [
+    // Required for Docker version of Puppeteer
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    // This will write shared memory files into /tmp instead of /dev/shm,
+    // because Docker’s default for /dev/shm is 64MB
+    '--disable-dev-shm-usage'
+  ]
+}
+
+const devPuppeteerArguments = { headless: true }
+
+const PuppeteerArguments = process.env.MODE === 'PROD'
+  ? prodPuppeteerArguments
+  : devPuppeteerArguments
+
 module.exports.getTrains = async (date, cordOrigen, cordDestino) => {
   const parsedDate = moment(date).format('DD/MM/YYYY')
-  const browser = await puppeteer.launch({
-    args: [
-      // Required for Docker version of Puppeteer
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      // This will write shared memory files into /tmp instead of /dev/shm,
-      // because Docker’s default for /dev/shm is 64MB
-      '--disable-dev-shm-usage'
-    ]
-  })
+  const browser = await puppeteer.launch(PuppeteerArguments)
   const page = await browser.newPage()
   await page.goto('http://www.renfe.com/')
   await page.evaluate(
