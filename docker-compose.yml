@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  renfeService:
+    image: renfe/service
+    build: .
+    container_name: renfeService
+    command: npm run ci
+    volumes:
+      - ./src:/usr/src/renfe_service/src
+    ports:
+      - "3030:8080"
+    env_file:
+      enviroments.env
