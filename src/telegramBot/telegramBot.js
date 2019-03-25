@@ -33,42 +33,39 @@ bot.onText(/\/getprecios.* (.*) (.*)/, (msg, match) => {
 });
 
 
-bot.onText(/\/finde (.*)€/, async (msg, match) => {  
-  async function getPricesOfWeekend (friday, sunday, monday) {
-    const trains = []
-    const fridayDate = friday.toDate()
-    const sundayDate = sunday.toDate()
-    const mondayDate = monday.toDate()
-    trains.push(... await getTrains(fridayDate, places.madrid, places.cuenca))
-    trains.push(... await getTrains(sundayDate, places.cuenca, places.madrid))
-    trains.push(... await getTrains(mondayDate, places.cuenca, places.madrid))
-    return trains
-  }
-  
+bot.onText(/\/finde (.*)€/, async (msg, match) => {
+
   const chatId = msg.chat.id;
   const maxPrice = match[1] // the captured "whatever"
 
+  async function filterTrainsAndSendMessage (date, origen, destino) {
+    return await getTrains(date, origen, destino).then(trains => {
+      const filteredTrains = filterByPrice(maxPrice, trains)
+      bot.sendMessage(chatId, parserRenfeResponse(filteredTrains))
+    })
+  }
+
+  async function getPricesOfWeekend (friday, sunday, monday) {
+    const fridayDate = friday.toDate()
+    const sundayDate = sunday.toDate()
+    const mondayDate = monday.toDate()
+    await filterTrainsAndSendMessage(fridayDate, places.madrid, places.cuenca)
+    await filterTrainsAndSendMessage(sundayDate, places.cuenca, places.madrid)
+    await filterTrainsAndSendMessage(mondayDate, places.cuenca, places.madrid)
+  }
+  
   const nextFriday = moment().day(5)
   const nextSaturday = moment().day(7)
   const nextSunday = moment().day(1)
 
-  let trains = []
-  const trains_week = await getPricesOfWeekend(nextFriday, nextSaturday, nextSunday)
-  trains = [...trains_week]
-  trains = filterByPrice(maxPrice, trains)
-  bot.sendMessage(chatId, parserRenfeResponse(trains))
-
-
   const numberOfWeeks = 4
   for (let i = 0; i < numberOfWeeks; i ++){
-    nextFriday.add(1, 'week')
-    nextSaturday.add(1, 'week')
-    nextSunday.add(1, 'week')
-    const trains_week = await getPricesOfWeekend(nextFriday, nextSaturday, nextSunday)
-    trains = filterByPrice(maxPrice, trains_week)
-    bot.sendMessage(chatId, parserRenfeResponse(trains_week))
+    if (i > 0){
+      nextFriday.add(1, 'week')
+      nextSaturday.add(1, 'week')
+      nextSunday.add(1, 'week')
+    }
+    getPricesOfWeekend(nextFriday, nextSaturday, nextSunday)
   }
-
-
 
 });
