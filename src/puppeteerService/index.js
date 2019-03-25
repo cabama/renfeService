@@ -7,10 +7,18 @@ const { waitPriceTableIsLoaded, setDateInForm } = require('./helpers')
 const COORD_FERNANDO_ZOBEL = '0071,03208,03208'
 const COORD_ATOCHA = '0071,60000,00600'
 
-module.exports.places = {
+
+const places2Coord = {
   cuenca: COORD_FERNANDO_ZOBEL,
   madrid: COORD_ATOCHA
 }
+
+const coord2Places = (coord) => {
+  return Object.keys(places2Coord).filter(place => {
+    return places2Coord[place] === coord
+  })[0]
+}
+module.exports.places = places2Coord
 
 const prodPuppeteerArguments = {
   args: [
@@ -47,8 +55,14 @@ module.exports.getTrains = async (date, cordOrigen, cordDestino) => {
   )
   await page.waitForNavigation()
   await setDateInForm(page, date)
-  const listaTrenes = await waitPriceTableIsLoaded(page)
+  const trainList = await waitPriceTableIsLoaded(page)
     .then(() => page.evaluate(getObjectFromlistaTrenesTable))
+    .then((trainList) => trainList.map(train => {
+      train['date'] = date;
+      train['origen'] = coord2Places(cordOrigen)
+      train['destino'] = coord2Places(cordDestino)
+      return train
+    }))
   await browser.close()
-  return listaTrenes
+  return trainList
 }
