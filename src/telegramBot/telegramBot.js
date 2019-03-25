@@ -55,6 +55,9 @@ bot.onText(/\/finde (.*)€/, async (msg, match) => {
   let trains = []
   const trains_week = await getPricesOfWeekend(nextFriday, nextSaturday, nextSunday)
   trains = [...trains_week]
+  trains = filterByPrice(maxPrice, trains)
+  bot.sendMessage(chatId, parserRenfeResponse(trains))
+
 
   const numberOfWeeks = 4
   for (let i = 0; i < numberOfWeeks; i ++){
@@ -62,10 +65,10 @@ bot.onText(/\/finde (.*)€/, async (msg, match) => {
     nextSaturday.add(1, 'week')
     nextSunday.add(1, 'week')
     const trains_week = await getPricesOfWeekend(nextFriday, nextSaturday, nextSunday)
-    trains = [...trains, ...trains_week]
+    trains = filterByPrice(maxPrice, trains_week)
+    bot.sendMessage(chatId, parserRenfeResponse(trains_week))
   }
 
-  trains = filterByPrice(maxPrice, trains)
-  bot.sendMessage(chatId, parserRenfeResponse(trains))
+
 
 });
